@@ -20,6 +20,36 @@ jobs:
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           echo "Found Android project: $PROJECT_DIR"
 
+      - name: Fix AndroidManifest
+        run: |
+          cat > "$PROJECT_DIR/app/src/main/AndroidManifest.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <uses-permission android:name="android.permission.INTERNET" />
+
+              <application
+                  android:theme="@android:style/Theme.Material.Light.NoActionBar"
+                  android:label="MyDownloader"
+                  android:allowBackup="true"
+                  android:supportsRtl="true">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+
+                  </activity>
+
+              </application>
+
+          </manifest>
+          EOF
+
       - name: Fix activity layout
         run: |
           cat > "$PROJECT_DIR/app/src/main/res/layout/activity_main.xml" <<'EOF'
