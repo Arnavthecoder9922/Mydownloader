@@ -11,25 +11,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check files
-        run: ls -la
-
       - name: Extract project
-        run: unzip -q Mydownloader.zip
+        run: unzip -q Mydownloader.zip -d project
 
-      - name: Check project
-        run: ls -la MyDownloader
+      - name: Find project
+        run: |
+          echo "Extracted files:"
+          find project -maxdepth 3 -type f | head -100
+
+      - name: Find Gradle project
+        run: |
+          PROJECT_DIR=$(find project -name settings.gradle -o -name settings.gradle.kts | head -1 | xargs dirname)
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Found project at: $PROJECT_DIR"
 
       - name: Make Gradle executable
-        working-directory: MyDownloader
-        run: chmod +x gradlew
+        run: chmod +x "$PROJECT_DIR/gradlew"
 
       - name: Build APK
-        working-directory: MyDownloader
-        run: ./gradlew assembleDebug
+        run: |
+          cd "$PROJECT_DIR"
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: MyDownloader-APK
-          path: MyDownloader/app/build/outputs/apk/debug/app-debug.apk
+          path: "**/app/build/outputs/apk/debug/app-debug.apk"
