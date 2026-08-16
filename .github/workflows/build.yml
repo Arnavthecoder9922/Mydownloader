@@ -21,35 +21,35 @@ jobs:
           echo "Found Android project: $PROJECT_DIR"
 
       - name: Clean activity XML
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
         run: |
-          python3 - <<PY
+          python3 - <<'PY'
+          import os
           from pathlib import Path
 
-          p = Path("$PROJECT_DIR/app/src/main/res/layout/activity_main.xml")
+          project = Path(os.environ["PROJECT_DIR"])
+          xml_file = project / "app" / "src" / "main" / "res" / "layout" / "activity_main.xml"
 
-          if not p.exists():
-              raise SystemExit(f"File not found: {p}")
+          if not xml_file.exists():
+              raise SystemExit("activity_main.xml was not found")
 
-          data = p.read_text(encoding="utf-8-sig")
+          data = xml_file.read_text(encoding="utf-8-sig")
 
-          # Remove anything before the XML declaration/root element
-          xml_start = data.find("<?xml")
+          # Remove anything before the XML declaration.
+          position = data.find("<?xml")
 
-          if xml_start >= 0:
-              data = data[xml_start:]
+          if position >= 0:
+              data = data[position:]
           else:
-              xml_start = data.find("<")
-              if xml_start < 0:
+              position = data.find("<")
+              if position < 0:
                   raise SystemExit("No XML content found")
-              data = data[xml_start:]
+              data = data[position:]
 
-          # Remove accidental Markdown code fences
-          data = data.replace("```xml", "").replace("```", "").strip()
+          xml_file.write_text(data.strip() + "\n", encoding="utf-8")
 
-          p.write_text(data + "\n", encoding="utf-8")
-
-          print("Cleaned:", p)
-          print("First characters:", repr(data[:50]))
+          print("XML cleaned successfully")
           PY
 
       - name: Install Gradle
