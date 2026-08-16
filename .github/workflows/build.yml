@@ -14,16 +14,48 @@ jobs:
       - name: Extract project
         run: unzip -q Mydownloader.zip -d project
 
+      - name: Find Android project
+        run: |
+          PROJECT_DIR=$(find project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit | xargs dirname)
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Found Android project: $PROJECT_DIR"
+
+      - name: Clean activity XML
+        run: |
+          python3 - <<PY
+          from pathlib import Path
+
+          p = Path("$PROJECT_DIR/app/src/main/res/layout/activity_main.xml")
+
+          if not p.exists():
+              raise SystemExit(f"File not found: {p}")
+
+          data = p.read_text(encoding="utf-8-sig")
+
+          # Remove anything before the XML declaration/root element
+          xml_start = data.find("<?xml")
+
+          if xml_start >= 0:
+              data = data[xml_start:]
+          else:
+              xml_start = data.find("<")
+              if xml_start < 0:
+                  raise SystemExit("No XML content found")
+              data = data[xml_start:]
+
+          # Remove accidental Markdown code fences
+          data = data.replace("```xml", "").replace("```", "").strip()
+
+          p.write_text(data + "\n", encoding="utf-8")
+
+          print("Cleaned:", p)
+          print("First characters:", repr(data[:50]))
+          PY
+
       - name: Install Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
-
-      - name: Find Android project
-        run: |
-          PROJECT_DIR=$(find project -name settings.gradle -o -name settings.gradle.kts | head -1 | xargs dirname)
-          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          echo "Found: $PROJECT_DIR"
+          gradle-version: "8.7"
 
       - name: Build APK
         run: |
@@ -35,3 +67,4 @@ jobs:
         with:
           name: MyDownloader-APK
           path: "**/app/build/outputs/apk/debug/app-debug.apk"
+          if-no-files-found: error
