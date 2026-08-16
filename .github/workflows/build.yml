@@ -11,8 +11,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check files
+        run: ls -la
+
       - name: Extract project
-        run: unzip -q MyDownloader.zip
+        run: unzip -q Mydownloader.zip
+
+      - name: Check project
+        run: ls -la MyDownloader
 
       - name: Make Gradle executable
         working-directory: MyDownloader
