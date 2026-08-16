@@ -20,37 +20,31 @@ jobs:
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           echo "Found Android project: $PROJECT_DIR"
 
-      - name: Clean activity XML
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+      - name: Fix activity layout
         run: |
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
+          cat > "$PROJECT_DIR/app/src/main/res/layout/activity_main.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:padding="20dp">
 
-          project = Path(os.environ["PROJECT_DIR"])
-          xml_file = project / "app" / "src" / "main" / "res" / "layout" / "activity_main.xml"
+              <EditText
+                  android:id="@+id/urlInput"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:hint="Enter download URL"
+                  android:inputType="textUri" />
 
-          if not xml_file.exists():
-              raise SystemExit("activity_main.xml was not found")
+              <Button
+                  android:id="@+id/downloadButton"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="Download" />
 
-          data = xml_file.read_text(encoding="utf-8-sig")
-
-          # Remove anything before the XML declaration.
-          position = data.find("<?xml")
-
-          if position >= 0:
-              data = data[position:]
-          else:
-              position = data.find("<")
-              if position < 0:
-                  raise SystemExit("No XML content found")
-              data = data[position:]
-
-          xml_file.write_text(data.strip() + "\n", encoding="utf-8")
-
-          print("XML cleaned successfully")
-          PY
+          </LinearLayout>
+          EOF
 
       - name: Install Gradle
         uses: gradle/actions/setup-gradle@v4
